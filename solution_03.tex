@@ -14,12 +14,12 @@
 \usepackage{fancybox}
 \usepackage{amssymb,amsmath,amsthm}
 \usepackage{gensymb}
+\usepackage{listings}
 \usepackage{enumerate}
 \usepackage[linesnumbered,ruled,vlined,norelsize]{algorithm2e}
 %\usepackage[bookmarksnumbered,pdftitle={\titleDocument},hyperfootnotes=false]{hyperref} 
 \usepackage{color}
 \usepackage{float}
-
 %test
 %\usepackage[backend=bibtex]{biblatex}
 %\usepackage{filecontents}
@@ -89,6 +89,26 @@
 \begin{document}
 \begin{aufgabe}
 \end{aufgabe}
+\begin{enumerate}[a)]
+	\item Der Tomasulo Algorithmus implementiert Dynamic Scheduling auf Hardware Ebene. Der Algorithmus arbeitet in-order-issue, out-of-order execution and writeback. Die Ergebnisse werden direkt an die Funktionseinheiten übermittelt, an der Stelle kein Schreiben ins Register. Das \textit{Dynamic Register Renaming} wird durch die \textbf{Reservation Stations} implementiert, für jede Funktionseinheit eine Station. Die Reservation Station dient als Entkopplung der Befehlströme, um die Abhängigkeiten und Konflikte in den Griff zu kriegen. Der \textbf{Common Data Bus (CDB)} verbindet dabei die Funktionseinheiten mit dem Register und den Reservation Stations. Das Umbennenen des Registers erfolgt durch einen größeren Platz in den Stations als im Register, in welchem die Registeradressen dynamisch abgebildet werden. \\
+	Durch das Renaming gilt das \textit{Single Assignment Prinzip}, welches den \textbf{WAW- \& WAR-Konflikten} entgegenwirkt, somit entstehen in den Arten von Konflikten keine Wartezyklen mehr. Zum lösen eines WAW-Konflikts gehört dazu, zu entscheiden, wann man ein Ergebnis ins Register zurückschreiben darf.\\
+	% TODO nicht ganz sicher bei den RAWs.
+	Echte Datenabhängigkeiten, welche \textbf{RAW-Konflikte} auslösen, werden durch Ergebniszurückschreiben in andere Reservation Stations angegangen. Allerdings ist hier weiterhin mit Wartezyklen zu rechnen, da static single assignment Namens- und somit Schreibkonflikte löst, aber echte Datenabhängigkeiten weiterhin bestehen bleiben.
+	% TODO was ist mit Strukturhazards? Jump / Code Branching?
+	\item 
+	% TODO 1b
+\end{enumerate}
 \begin{aufgabe}
 \end{aufgabe}
+Load und Store Befehle können nicht out-of-order ausgeführt werden, wenn es Datenabhängigkeiten über den Speicher gibt. Für ein Beispiel ist folgendes Listing zu betrachten:
+% Das ist das Beispiel aus der Vorlesung
+\begin{lstlisting}[frame=single]
+LDR r1, 0x0001
+LDR r2, 0x0001
+ADD r3, r1, r2
+STR r3, [r2,#8]
+LDR r4, [r1,#8]
+\end{lstlisting}
+Im obigen Beispiel werden die ersten beiden Registereinträge mit einem immediate value geladen, der Hex 0x0001 (gleicher Wert, Thema unnötig viele Registereinträge). $r3$ ist die Summe aus $r1, r2$, welches dann in den Speicher geschrieben wird. Daraufhin wird aus eben der Speicherzelle $r4$ gelesen, was so aber nicht ersichtlich ist, da im Code keine synaktische, sondern eine rein semantische Abhängigkeit vorliegt.\\
+Für Load und Store Befehle gibt es zwei Möglichkeiten, sie außerhalb der Programmreihenfolge starten zu lassen. Eine Möglichkeit ist ein \textbf{Load-Store Buffer}, eine spezielle Reservation Station, die immer in Programmreihenfolge abgearbeitet wird. Eine andere Möglichkeit wäre, die Adressen, die eventuell für Datenabhängigkeiten sorgen, zu berechnen und die Loads und Stores, die unabhängig sind, außerhalb der Programmreihenfolge laufen zu lassen. So oder so, gibt es Abhängigkeiten bei Load oder Store Befehlen, kann keine out-of-order execution stattfinden.
 \end{document}
