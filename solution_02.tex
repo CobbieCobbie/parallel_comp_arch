@@ -1,0 +1,144 @@
+\documentclass[a4paper,12pt,headsepline]{scrartcl}
+
+%\part{title}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{caption,subcaption}
+\usepackage[ngerman]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{proof}
+\geometry{left=3.5cm, right=2cm, top=2.5cm, bottom=2cm}
+\usepackage{hyperref}
+%\usepackage[hyphens,obeyspaces,spaces]{url}
+\usepackage{fancybox}
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{gensymb}
+\usepackage{enumerate}
+\usepackage[linesnumbered,ruled,vlined,norelsize]{algorithm2e}
+%\usepackage[bookmarksnumbered,pdftitle={\titleDocument},hyperfootnotes=false]{hyperref} 
+\usepackage{color}
+\usepackage{float}
+
+%test
+%\usepackage[backend=bibtex]{biblatex}
+%\usepackage{filecontents}
+
+%\addbibresource{ref.bib}
+
+\restylefloat{figure}
+
+% Makros
+%\newenvironment{sketch}{\begin{proof}[Proof (Sketch)]}{\end{proof}}
+%\newtheorem{theorem}{Theorem}
+%\newtheorem{assumption}{Assumption}
+%\newtheorem{lemma}{Lemma}
+%\newtheorem{remark}{Remark}
+%\newtheorem{definition}{Definition}
+%\newtheorem{corollary}{Corollary}
+\newcommand{\comment}[1]
+{
+  \begin{quotation}
+    \textcolor{blue}{\underline{Edit:} #1}
+  \end{quotation}
+}
+\newtheorem{aufgabe}{Aufgabe}
+\newcommand{\Ex}[2]
+{
+	\setcounter{section}{#2}
+	\section*{Übungsblatt #2 zu #1}
+}
+\newcommand{\TODO}[1]
+{
+  \begin{quotation}
+    \textcolor{red}{\underline{TODO:} #1}
+  \end{quotation}
+}
+% Zeichen 
+\newcommand{\OO}{\ensuremath{\mathcal{O}}}
+\newcommand{\ec}{\texttt{ec}}
+\newcommand{\NP}{\call{NP}}
+\newcommand{\call}[1]{\ensuremath{\mathcal{#1}}}
+
+% neue Kopfzeilen mit fancypaket
+\usepackage{fancyhdr} %Paket laden
+\pagestyle{fancy} %eigener Seitenstil
+\fancyhf{} %alle Kopf- und Fußzeilenfelder bereinigen
+\fancyhead[L]{Benjamin \c Coban \\ Michael Throner \\ Philipp Huber }
+\fancyhead[C]{Parallele Rechnerarchitekturen \\ Blatt 2}
+\fancyhead[R]{3526251 \\ 4019521 \\ 3776454}
+\setlength{\headheight}{39pt}
+\renewcommand{\headrulewidth}{0.4pt} %obere Trennlinie
+%\fancyfoot[C]{\thepage} %Seitennummer
+%\renewcommand{\footrulewidth}{0.4pt} %untere Trennlinie
+
+\frenchspacing
+\makeindex
+
+% Pseudocode für Java
+\usepackage{listings}
+\lstset{numbers=left, numberstyle=\tiny, numbersep=5pt, keywordstyle=\color{black}\bfseries, stringstyle=\ttfamily,showstringspaces=false,basicstyle=\footnotesize,captionpos=b}
+\lstset{language=java}
+
+% Disable single lines at the start of a paragraph (Schusterjungen)
+\clubpenalty = 10000
+% Disable single lines at the end of a paragraph (Hurenkinder)
+\widowpenalty = 10000
+\displaywidowpenalty = 10000
+
+\begin{document}
+\begin{aufgabe}Scoreboard, Konfliktbehandlung
+\end{aufgabe}
+Aus der Skriptfolie Superskalarität ist folgendes bekannt:
+\begin{enumerate}
+    \item In der \textit{Issue} Phase wird auf eine freie FU gewartet. Sobald die FU nicht mehr beschäftigt ist und keine andere ausgeführte Instruktion dasselbe Zielregister hat, wird der Befehl ausgeführt. 
+    \begin{quotation}
+    \texttt{wait until (!FU.busy \&\& result[D] == null)}
+    \end{quotation}
+    Somit wird garantiert, dass kein aktualisierter Wert durch einen alten überschrieben wird (\textbf{WAW-Konfikt}). Weiter werden \textbf{Strukturkonflike} mit dem warten vermieden, sodass keine zwei Befehle gleichzeitig an gleicher Stelle im Register geschrieben werden.
+    \item In der \textit{Read Operands} Phase wird eine Ausführung erst dann gestartet, wenn keine andere Instruktion potenziell gerade auf das Quellregister schreibt. Die $R_j,  R_k$ bits geben an, ob die Quellregister verfügbar sind. (bereit und noch nicht gelesen)
+    \begin{quotation}
+    \texttt{wait until $ (R_j \wedge R_k) $}
+    \end{quotation}
+    Im Zweifel wartet das Scoreboard mit der Ausführung des Befehls. Damit wird der \textbf{RAW-Konflikt} umgangen, bei welchem ein zu alter Wert aus dem Quellregister gelesen wird.
+    \item In der Ergebnisphase wird solange mit schreiben gewartet, bis alle gestarteten Instruktionen aus dem Zielregister ihre Operanden gelesen haben. $F_j[FU],F_k[FU]$ beschreiben die Quellregister, $F_i[FU]$ das Zielregister.
+    \begin{quotation}
+    \texttt{$\bigwedge_{f\in FUs\setminus\{FU\}}(F_j[f] \neq F_i[FU] \vee \neg R_j[f])\wedge (F_k[f] \neq F_i[FU] \vee \neg R_k[f])$}
+    \end{quotation}
+    Erst, wenn alles aus dem Register gelesen worden ist, darf geschrieben werden. Dadurch, dass gewartet wird, bis das Zielregister frei ist im Sinne von Quellregistern, wird der \textbf{WAR-Konflikt} gemieden.
+\end{enumerate}
+
+\begin{aufgabe}
+\end{aufgabe}
+ALU1/ALU2 erhalten erst in Takt 5/6 Instruktionen, da ein Quellregister ein Zielregister von bereits aktiven Instruktionen ist. LDU1 wartet mit dem Lesen der Operanden des nächsten Store Befehls bis Takt 14, da r5 zuvor als aktives Zielregister eingetragen ist. Der compare Befehl kann erst in Takt 15 zugewiesen werden, wenn ALU1 frei ist und das Quellregister r4 erst einlesen, wenn es fertig beschrieben worden ist. Das erzeugt keine Verzögerung, aber erfordert die korrekte Abfolge des Beschreibens von r4 durch ALU2 und des Lesens aus r4 durch ALU1. Rot markierte Taktzahlen deuten im Folgenden auf einen aufgelösten Konflikt hin.\\
+
+%\begin{tabular}{|c|c|c|c|c|c|c|}
+%     \hline Ins&Iss&RO&EC&WB&Hazard&Unit\\
+%     \hline ldr r2,[r4]&1&2&4&5&-&LDU1  \\
+%     \hline add r2,r2,\#4&5&6&8&9&WAW r2&ALU1\\
+%     \hline ldr r3,[r4]&2&3&5&6&&LDU2\\
+%     \hline add r3,r3,\#4&6&7&9&10&WAW r3&ALU2\\
+%     \hline add r5,r2,r3&10&11&13&14&RAW r3&ALU1\\
+%     \hline str r5, [r4]&14&15&17&18&RAW r5&LDU1\\
+%     \hline add r4,r4,\#4&19&20&22&23&WAR r4&ALU2\\
+%     \hline cmp r4,r7&23&24&26&27&RAW r4&ALU1\\
+%     \hline bne L1&27&&&&&\\
+%     \hline
+%\end{tabular}\\
+
+\begin{tabular}{|c|c|c|c|c|c|c|}
+     \hline Ins&Iss&RO&EC&WB&Hazard&Unit\\
+     \hline ldr r2,[r4]&1&2&4&5&-&LDU1  \\
+     \hline add r2,r2,\#4&\textcolor{red}{5}&6&8&9&WAW r2&ALU1\\
+     \hline ldr r3,[r4]&2&3&5&6&&LDU2\\
+     \hline add r3,r3,\#4&\textcolor{red}{6}&7&9&10&WAW r3&ALU2\\
+     \hline add r5,r2,r3&\textcolor{red}{10}&11&13&14&STRUCT ALU1&ALU1\\
+     \hline str r5, [r4]&11&\textcolor{red}{14}&16&17&RAW r5&LDU1\\
+     \hline add r4,r4,\#4&12&13&15&16&&ALU2\\
+     \hline cmp r4,r7&\textcolor{red}{15}&\textcolor{red}{16}&18&N/A&STRUCT ALU1, RAW r4&ALU1\\
+     \hline bne L1&\textcolor{red}{18}&N/A&20&N/A&special&ALU1\\
+     \hline
+\end{tabular}\\
+
+Es besteht eine Abhängigkeit zwischen dem jump und dem cmp, da der compare Befehl das zero flag setzt und die Bedingung dafür darstellt, ob der Sprung stattfindet. Laut dem Scoreboard Algorithmus findet die Auswertung des Branchsprungs statt, wenn das flag gesetzt worden ist, welcher auch als Ziel, auf das man zu warten hat, verstanden werden kann.
+\end{document}

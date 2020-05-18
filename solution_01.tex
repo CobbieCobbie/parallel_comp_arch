@@ -1,0 +1,159 @@
+\documentclass[a4paper,12pt,headsepline]{scrartcl}
+
+%\part{title}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{caption,subcaption}
+\usepackage[ngerman]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{proof}
+\geometry{left=3.5cm, right=2cm, top=2.5cm, bottom=2cm}
+\usepackage{hyperref}
+%\usepackage[hyphens,obeyspaces,spaces]{url}
+\usepackage{fancybox}
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{gensymb}
+\usepackage[linesnumbered,ruled,vlined,norelsize]{algorithm2e}
+%\usepackage[bookmarksnumbered,pdftitle={\titleDocument},hyperfootnotes=false]{hyperref} 
+\usepackage{color}
+\usepackage{float}
+
+%test
+%\usepackage[backend=bibtex]{biblatex}
+%\usepackage{filecontents}
+
+%\addbibresource{ref.bib}
+
+\restylefloat{figure}
+
+% Makros
+%\newenvironment{sketch}{\begin{proof}[Proof (Sketch)]}{\end{proof}}
+%\newtheorem{theorem}{Theorem}
+%\newtheorem{assumption}{Assumption}
+%\newtheorem{lemma}{Lemma}
+%\newtheorem{remark}{Remark}
+%\newtheorem{definition}{Definition}
+%\newtheorem{corollary}{Corollary}
+\newcommand{\comment}[1]
+{
+  \begin{quotation}
+    \textcolor{blue}{\underline{Edit:} #1}
+  \end{quotation}
+}
+\newtheorem{aufgabe}{Aufgabe}
+\newcommand{\Ex}[2]
+{
+	\setcounter{section}{#2}
+	\section*{Übungsblatt #2 zu #1}
+}
+\newcommand{\TODO}[1]
+{
+  \begin{quotation}
+    \textcolor{red}{\underline{TODO:} #1}
+  \end{quotation}
+}
+% Zeichen 
+\newcommand{\OO}{\ensuremath{\mathcal{O}}}
+\newcommand{\ec}{\texttt{ec}}
+\newcommand{\NP}{\call{NP}}
+\newcommand{\call}[1]{\ensuremath{\mathcal{#1}}}
+
+% neue Kopfzeilen mit fancypaket
+\usepackage{fancyhdr} %Paket laden
+\pagestyle{fancy} %eigener Seitenstil
+\fancyhf{} %alle Kopf- und Fußzeilenfelder bereinigen
+\fancyhead[L]{Benjamin \c Coban \\ Michael Throner \\ Philipp Huber }
+\fancyhead[C]{Parallele Rechnerarchitekturen \\ Blatt 1}
+\fancyhead[R]{3526251 \\ 4019521 \\ 3776454}
+\setlength{\headheight}{39pt}
+\renewcommand{\headrulewidth}{0.4pt} %obere Trennlinie
+%\fancyfoot[C]{\thepage} %Seitennummer
+%\renewcommand{\footrulewidth}{0.4pt} %untere Trennlinie
+
+\frenchspacing
+\makeindex
+
+% Pseudocode für Java
+\usepackage{listings}
+\lstset{numbers=left, numberstyle=\tiny, numbersep=5pt, keywordstyle=\color{black}\bfseries, stringstyle=\ttfamily,showstringspaces=false,basicstyle=\footnotesize,captionpos=b}
+\lstset{language=java}
+
+% Disable single lines at the start of a paragraph (Schusterjungen)
+\clubpenalty = 10000
+% Disable single lines at the end of a paragraph (Hurenkinder)
+\widowpenalty = 10000
+\displaywidowpenalty = 10000
+
+\begin{document}
+
+%\begin{flushright}
+%	Benjamin \c Coban ~~~~~ 3526251\\
+%	Philipp Huber ~~~~~ 3776454\\
+%	Michael Throner ~~~~~ 4019521
+%\end{flushright}
+%\Ex{Parallenen Rechnerarchitekturen}{1}
+\section{Out-of-Order Execution}
+\subsection*{a)}
+$fdiv$ benötigt den initialen Wert von $s0$ muss somit vor $fmul$ ausgefürt werden.\\
+$fadd[1]$ benötigt $s0$ von $fdiv$ und kann somit erst danach und vor $fmul$ berechnet werden. Außerdem wird der initiale Wert von $s2$ benötigt wodurch die Funktion auch vor $fsub$ berechnet werden muss.\\
+$str$ braucht $s0$ von $fdiv$ und muss somit vor $fmul$ und nach $fdiv$ durchgeführt werden.\\
+$fsub$ benötigt den Initialen Wert von $s4$ und muss somit vor $fadd[2]$ ausgeführt werden.\\
+$fmul$ verwendet die Ergebnisse $s2$ von $fsub$ und $s4$ von $fadd[2]$. Somit kann $fmul$ erst nach beiden ausgeführt werden.
+\\
+\resizebox{\linewidth}{!}{
+\begin{tabular}{l|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c}
+Befehl/Takt	&0	&1	&2	&...	&18	&19	&20	&21	&22	&23	&24	&25	&26	&27	&28	&29\\\hline\hline
+$fdiv$		&	&RX	&RX	&...	&RX	&RXW	&	&	&	&	&	&	&	&	&	&\\\hline
+$fadd[1]$	&	&	&	&...	&	&	&	&RX	&RXW	&	&	&	&	&	&	&\\\hline
+$str$		&	&	&	&...	&	&	&RXW	&	&	&	&	&	&	&	&	&\\\hline
+$fsub$	&	&	&	&...	&	&	&	&	&RX	&RXW	&	&	&	&	&	&\\\hline
+$fadd[2]$	&	&	&	&...	&	&	&	&	&	&RX	&RXW	&	&	&	&	&\\\hline
+$fmul$	&	&	&	&...	&	&	&	&	&	&	&	&RX	&RX	&RX	&RX	&RXW\\\hline\hline
+Reg. \& Speicher/Takt	&0	&1	&2	&...	&18	&19	&20	&21	&22	&23	&24	&25	&26	&27	&28	&29\\\hline\hline
+$s0$		&3,6	&3,6	&3,6	&...	&3,6	&1,8	&1,8	&1,8	&1,8	&1,8	&1,8	&1,8	&1,8	&1,8	&1,8	&19,2\\\hline
+$s1$		&2,0	&2,0	&2,0	&...	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0\\\hline
+$s2$		&2,0	&2,0	&2,0	&...	&2,0	&2,0	&2,0	&2,0	&3,8	&4,0	&4,0	&4,0	&4,0	&4,0	&4,0	&4,0\\\hline
+$s3$		&3,8	&3,8	&3,8	&...	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8\\\hline
+$s4$		&5,0	&5,0	&5,0	&...	&5,0	&5,0	&5,0	&5,0	&5,0	&5,0	&4,8	&4,8	&4,8	&4,8	&4,8	&4,8\\\hline
+$s5$		&1,0	&1,0	&1,0	&...	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0\\\hline
+$MEM[0x10001000]$&0,0&0,0&0,0&...&0,0	&0,0	&1,8	&1,8	&1,8	&1,8	&1,8	&1,8	&1,8	&1,8	&1,8	&1,8\\\hline
+\end{tabular}
+}
+
+\subsection*{b)}
+
+$fdiv$	$s0,s0,s1$\\
+$fadd$	$s2,s0,s2$\\
+$str$	$s0,[r0,\#1000]$\\
+$fsub$	$t0,s4,s5$\\
+$fadd$	$s4,s3,s5$\\
+$fmul$	$t1,t0,s4$\\
+
+\resizebox{\linewidth}{!}{
+\begin{tabular}{l|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c}
+Befehl/Takt	&0	&1	&2	&3	&4	&5	&6	&7	&8	&9	&10	&...	&18	&19	&20	&21	&22\\\hline\hline
+$fdiv$		&	&RX	&RX	&RX	&RX	&RX	&RX	&RX	&RX	&RX	&RX	&...	&RX	&RXW	&	&	&\\\hline
+$fadd[1]$	&	&	&	&	&	&	&	&	&	&	&	&...	&	&	&RX	&RXW	&\\\hline
+$str$		&	&	&	&	&	&	&	&	&	&	&	&...	&	&	&	&	&RXW\\\hline
+$fsub$	&	&	&RX	&RXW	&	&	&	&	&	&	&	&...	&	&	&	&	&\\\hline
+$fadd[2]$	&	&	&	&RX	&RXW	&	&	&	&	&	&	&...	&	&	&	&	&\\\hline
+$fmul$	&	&	&	&	&	&RX	&RX	&RX	&RX	&RXW	&	&...	&	&	&	&	&\\\hline\hline
+Reg. \& Speicher/Takt	&0	&1	&2	&3	&4	&5	&6	&7	&8	&9	&10	&...	&18	&19	&20	&21	&22\\\hline\hline
+$s0$		&3,6	&3,6	&3,6	&3,6	&3,6	&3,6	&3,6	&3,6	&3,6	&3,6	&3,6	&...	&3,6	&1,8	&1,8	&1,8	&1,8\\\hline
+$s1$		&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&...	&2,0	&2,0	&2,0	&2,0	&2,0\\\hline
+$s2$		&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&2,0	&...	&2,0	&2,0	&2,0	&3,8	&3,8\\\hline
+$s3$		&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&3,8	&...	&3,8	&3,8	&3,8	&3,8	&3,8\\\hline
+$s4$		&5,0	&5,0	&5,0	&5,0	&4,8	&4,8	&4,8	&4,8	&4,8	&4,8	&4,8	&...	&4,8	&4,8	&4,8	&4,8	&4,8\\\hline
+$s5$		&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&...	&1,0	&1,0	&1,0	&1,0	&1,0\\\hline
+$t0$		&1,0	&1,0	&1,0	&1,0	&4,0	&4,0	&4,0	&4,0	&4,0	&4,0	&4,0	&...	&4,0	&4,0	&4,0	&4,0	&4,0\\\hline
+$t1$		&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&1,0	&19,2	&19,2	&...	&19,2	&19,2	&19,2	&19,2	&19,2\\\hline
+$MEM[0x10001000]$&0,0&0,0&0,0&0,0&0,0	&0,0	&0,0	&0,0	&0,0	&0,0	&0,0	&...	&0,0	&0,0	&0,0	&0,0	&1,8\\\hline
+\end{tabular}
+}
+
+\section{Out-of-Order Execution mit gepipelineten Ausführungseinheiten}
+
+In einer voll gepipelineten Ausführungseinheit kann pro Takt die Ausführung einer Instruktion begonnen werden. Eine solche Einheit kann also die selbe Ausführungsordnung gewährleisten, die in Aufgabe 1 vorgeschlagen wurde und hält dabei alle Bedingungen ein. Diese Ausführungsordnung gewährleistet auch dass keine WAR-Hazards auftreten können, da Instruktionen die Registerinhalte überschreiben nicht gestartet werden bevor der Registerinhalt von allen notwendigen Instruktionen gelesen wurde. 
+
+\end{document}
